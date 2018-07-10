@@ -1,60 +1,49 @@
 <template>
-  <div id="app">
-    <img src="./assets/logo.png">
-    <h1>{{ msg }}</h1>
-    <h2>Essential Links</h2>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank">Twitter</a></li>
-    </ul>
-    <h2>Ecosystem</h2>
-    <ul>
-      <li><a href="http://router.vuejs.org/" target="_blank">vue-router</a></li>
-      <li><a href="http://vuex.vuejs.org/" target="_blank">vuex</a></li>
-      <li><a href="http://vue-loader.vuejs.org/" target="_blank">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank">awesome-vue</a></li>
-    </ul>
+  <div>
+    <snapshot-feed v-bind:snapshots="snapshots"></snapshot-feed>
   </div>
 </template>
 
 <script>
-export default {
-  name: 'app',
-  data () {
-    return {
-      msg: 'Welcome to Your Vue.js App'
-    }
+  import axios from 'axios';
+  import SnapshotFeed from './components/SnapshotFeed'
+  import eventBus from './main.js'
+
+  export default {
+    name: 'app',
+    data() {
+      return {
+        snapshots: []
+      }
+    },
+    created() {
+      eventBus.$on('requestMoreSnapshots', $state => {
+        axios
+          .get('https://ohou.se/cards/feed.json', {
+            params: {
+              per: 20,
+              page: this.snapshots.length / 20 + 1,
+            },
+          })
+          .then(({data}) => {
+            console.log(data);
+            if (data.cards.length) {
+              this.snapshots = this.snapshots.concat(data.cards);
+              $state.loaded();
+              if (this.snapshots.length / 20 === 10) {
+                $state.complete();
+              }
+            } else {
+              $state.complete();
+            }
+          });
+      });
+    },
+    components: {
+      SnapshotFeed,
+    },
   }
-}
 </script>
 
 <style>
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-
-h1, h2 {
-  font-weight: normal;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-
-a {
-  color: #42b983;
-}
 </style>
